@@ -11,40 +11,39 @@ def rotate(img, angle):
 
 def addArucoImage(box, img, arucoImg):           
     h, w = arucoImg.shape[:2]                             
-    pts1 = box                                     
-    pts2 = np.float32([[0,0], [w,0], [w,h], [0,h]])
-    matrix, _ = cv.findHomography(pts2, pts1)  
+    point1 = box                                     
+    point2 = np.float32([[0,0], [w,0], [w,h], [0,h]])
+    matrix, _ = cv.findHomography(point2, point1)  
     imgOut = cv.warpPerspective(arucoImg, matrix, (img.shape[1], img.shape[0]))
-    cv.fillConvexPoly(img, pts1.astype(int), (0, 0, 0))
+    cv.fillConvexPoly(img, point1.astype(int), (0, 0, 0))
     img = img + imgOut
     return img
-
 
 def cropAruco(arucoImg):
     gray = cv.cvtColor(arucoImg, cv.COLOR_BGR2GRAY)
     edged = cv.Canny(gray, 30, 200)
-    cc, hh = cv.findContours(edged,cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    c, h = cv.findContours(edged,cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
 
-    rect1=cv.minAreaRect(cc[0])
-    wt1=rotate(arucoImg, rect1[2])
+    rect1=cv.minAreaRect(c[0])
+    wm=rotate(arucoImg, rect1[2])
     area1=rect1[1][1]*rect1[1][0]
     
-    gray1 = cv.cvtColor(wt1, cv.COLOR_BGR2GRAY)
+    gray1 = cv.cvtColor(wm, cv.COLOR_BGR2GRAY)
     edged1 = cv.Canny(gray1, 30, 200)
-    cc1, hh1 = cv.findContours(edged1,cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+    contours, hier = cv.findContours(edged1,cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
 
     l=[]
-    for k in range(len(cc1)):
-        l.append(abs(cv.contourArea(cc1[k])-area1))
+    for k in range(len(contours)):
+        l.append(abs(cv.contourArea(contours[k])-area1))
 
-    inde=l.index(min(l))
-    k1=cc1[inde]
+    ind=l.index(min(l))
+    k1=contours[ind]
 
     xoff1,yoff1,w1,h1 = cv.boundingRect(k1)
     x_end1 = int(xoff1 + w1)
     y_end1= int(yoff1 + h1)
-    wt1=wt1[yoff1:y_end1,xoff1:x_end1]
-    return wt1
+    wm=wm[yoff1:y_end1,xoff1:x_end1]
+    return wm
 
 
 def placeArucoOnSquare(img, upperBound, lowerBound, arucoImg):
